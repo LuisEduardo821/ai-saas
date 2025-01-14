@@ -1,5 +1,6 @@
 "use client";
 import * as z from "zod";
+import axios from "axios";
 import { useForm } from "react-hook-form";
 import { Heading } from "@/components/heading";
 import { MessagesSquare } from "lucide-react";
@@ -10,8 +11,8 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import ChatCompletionRequestMessage from "openai";
-import { ChatCompletionMessage } from "openai/resources/index.mjs";
+import { ChatCompletionRequestMessage } from "openai";
+import { Empty } from "@/components/empty";
 
 const ConversationPage = () => {
   const router = useRouter();
@@ -24,13 +25,23 @@ const ConversationPage = () => {
   });
 
   const isLoading = form.formState.isSubmitting;
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       const userMessage: ChatCompletionRequestMessage = {
         role: "user",
         content: values.prompt,
       };
+      const newMessages = [...messages, userMessage];
+
+      const response = await axios.post("/api/conversation", {
+        messages: newMessages,
+      });
+      setMessages((current) => [...current, userMessage, response.data]);
+
+      form.reset();
     } catch (error) {
+      //TODO: Open Pro Modal
       console.log(error);
     } finally {
       router.refresh();
@@ -76,7 +87,16 @@ const ConversationPage = () => {
             </form>
           </Form>
         </div>
-        <div>Messages content</div>
+        <div className="space-y-4 mt-4">
+          {messages.length === 0 && !isLoading && (
+            <Empty label="Comienza una conversación con la IA" />
+          )}
+          <div className="flex flex-col-reverse gap-y-4">
+            {messages.map((message) => (
+              <div key={message.content}>{message.content}</div>
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
