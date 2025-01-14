@@ -7,8 +7,15 @@ import { formSchema } from "./contants";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import ChatCompletionRequestMessage from "openai";
+import { ChatCompletionMessage } from "openai/resources/index.mjs";
 
 const ConversationPage = () => {
+  const router = useRouter();
+  const [messages, setMessages] = useState<ChatCompletionRequestMessage[]>([]);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -18,7 +25,16 @@ const ConversationPage = () => {
 
   const isLoading = form.formState.isSubmitting;
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
-    console.log(values);
+    try {
+      const userMessage: ChatCompletionRequestMessage = {
+        role: "user",
+        content: values.prompt,
+      };
+    } catch (error) {
+      console.log(error);
+    } finally {
+      router.refresh();
+    }
   };
   return (
     <div>
@@ -41,14 +57,26 @@ const ConversationPage = () => {
                 render={({ field }) => (
                   <FormItem className="col-span-12 lg:col-span-10">
                     <FormControl className="m-0 p-0">
-                      <Input className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent shadow-none" />
+                      <Input
+                        className="border-0 outline-none focus-visible:ring-0 focus-visible:ring-transparent shadow-none"
+                        disabled={isLoading}
+                        placeholder="Como calcular el radio de un círculo?"
+                        {...field}
+                      />
                     </FormControl>
                   </FormItem>
                 )}
               />
+              <Button
+                className="col-span-12 lg:col-span-2 w-full"
+                disabled={isLoading}
+              >
+                Generar
+              </Button>
             </form>
           </Form>
         </div>
+        <div>Messages content</div>
       </div>
     </div>
   );
